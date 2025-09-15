@@ -8,5 +8,5 @@ var (
 
 func main() {
 	httpServer := NewHTTPServer(httpAddr)
-	go httpServer.run()
+	httpServer.run()
 }

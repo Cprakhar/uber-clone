@@ -4,8 +4,10 @@ go 1.24.2
 
 require (
 	github.com/gin-gonic/gin v1.10.1
+	github.com/gorilla/websocket v1.5.3
 	go.mongodb.org/mongo-driver v1.17.4
 	google.golang.org/grpc v1.75.1
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -34,6 +36,5 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
