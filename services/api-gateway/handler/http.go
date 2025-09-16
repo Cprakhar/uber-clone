@@ -8,7 +8,6 @@ import (
 	"github.com/cprakhar/uber-clone/services/api-gateway/types"
 	"github.com/cprakhar/uber-clone/shared/contracts"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // NewHTTPHandler initializes the HTTP handler with routes and middleware
@@ -22,12 +21,9 @@ func NewHTTPHandler() *gin.Engine {
 	// Use CORS middleware
 	// Define your middleware here
 	// Define your routes and handlers here
-	api := r.Group("/api/v1")
-	{
-		api.POST("/trips/preview", enableCORS, previewTripHandler)
-		api.GET("/ws/riders", RidersWSHandler)
-		api.GET("/ws/drivers", DriversWSHandler)
-	}
+	r.POST("/trip/preview", enableCORS, previewTripHandler)
+	r.GET("/ws/riders", RidersWSHandler)
+	r.GET("/ws/drivers", DriversWSHandler)
 
 	return r
 }
@@ -56,8 +52,8 @@ func previewTripHandler(ctx *gin.Context) {
 		return
 	}
 
-	if payload.RiderID == primitive.NilObjectID {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "rider_id is required"})
+	if payload.RiderID == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "riderID is required"})
 		return
 	}
 

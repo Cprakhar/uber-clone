@@ -1,25 +1,33 @@
 package types
 
 import (
-	"time"
-
 	pb "github.com/cprakhar/uber-clone/shared/proto/trip"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type TripModel struct {
 	ID       primitive.ObjectID
-	RiderID  primitive.ObjectID
+	RiderID  string
 	Status   string
 	RideFare *RideFareModel
+	Driver   *pb.TripDriver
 }
 
 type RideFareModel struct {
-	ID                primitive.ObjectID
-	RiderID           primitive.ObjectID
-	PackageSlug       string
-	TotalFareInRupees float64
-	ExpiresAt         time.Time
+	ID               primitive.ObjectID
+	RiderID          string
+	PackageSlug      string
+	TotalFareInPaise float64
+	Route            *OSRMApiResponse
+}
+
+func (r *RideFareModel) ToProto() *pb.RideFare {
+	return &pb.RideFare{
+		Id:               r.ID.Hex(),
+		RiderID:          r.RiderID,
+		PackageSlug:      r.PackageSlug,
+		TotalFareInPaise: r.TotalFareInPaise,
+	}
 }
 
 type OSRMApiResponse struct {
@@ -44,8 +52,8 @@ func (o *OSRMApiResponse) ToProto() *pb.Route {
 			continue
 		}
 		coordinates[i] = &pb.Coordinate{
-			Longitude: coord[0],
-			Latitude:  coord[1],
+			Latitude:  coord[0],
+			Longitude: coord[1],
 		}
 	}
 	return &pb.Route{
@@ -56,5 +64,25 @@ func (o *OSRMApiResponse) ToProto() *pb.Route {
 				Coordinates: coordinates,
 			},
 		},
+	}
+}
+
+func ToRideFaresProto(fares []*RideFareModel) []*pb.RideFare {
+	protoFares := make([]*pb.RideFare, len(fares))
+	for i, fare := range fares {
+		protoFares[i] = fare.ToProto()
+	}
+	return protoFares
+}
+
+type PricingConfig struct {
+	PricePerUnitDistance float64
+	PricePerMinute       float64
+}
+
+func DefaultPricingConfig() *PricingConfig {
+	return &PricingConfig{
+		PricePerUnitDistance: 10.0, // 10 Rs per km
+		PricePerMinute:       2.0,  // 2 Rs per minute
 	}
 }

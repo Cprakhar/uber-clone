@@ -25,9 +25,9 @@ func RidersWSHandler(ctx *gin.Context) {
 	}
 	defer conn.Close()
 
-	riderID := ctx.Query("rider_id")
+	riderID := ctx.Query("riderID")
 	if riderID == "" {
-		log.Println("no rider_id provided")
+		log.Println("no riderID provided")
 		return
 	}
 
@@ -55,9 +55,9 @@ func DriversWSHandler(ctx *gin.Context) {
 		return
 	}
 
-	packageSlug := ctx.Query("package_slug")
+	packageSlug := ctx.Query("packageSlug")
 	if packageSlug == "" {
-		log.Println("no package_slug provided")
+		log.Println("no packageSlug provided")
 		return
 	}
 
@@ -66,7 +66,7 @@ func DriversWSHandler(ctx *gin.Context) {
 		Name        string `json:"name"`
 		ProfilePic  string `json:"profile_pic"`
 		CarPlate    string `json:"car_plate"`
-		PackageSlug string `json:"package_slug"`
+		PackageSlug string `json:"packageSlug"`
 	}
 
 	msg := contracts.WSMessage{
