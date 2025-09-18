@@ -22,6 +22,7 @@ func NewHTTPHandler() *gin.Engine {
 	// Define your middleware here
 	// Define your routes and handlers here
 	r.POST("/trip/preview", enableCORS, previewTripHandler)
+	r.POST("/trip/start", enableCORS, tripStartHandler)
 	r.GET("/ws/riders", RidersWSHandler)
 	r.GET("/ws/drivers", DriversWSHandler)
 
@@ -39,6 +40,35 @@ func readinessHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "ready", "service": "api-gateway"})
 }
 
+// tripStartHandler handles trip start requests
+func tripStartHandler(ctx *gin.Context) {
+	var payload types.TripStartRequest
+	if err := ctx.ShouldBindJSON(&payload); err != nil {
+		ctx.JSON(http.StatusBadRequest, contracts.APIResponse{
+			Error: &contracts.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "invalid request payload",
+			},
+		})
+		return
+	}
+
+	tripService, err := grpcclient.NewTripServiceClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tripService.Close()
+
+	trip, err := tripService.Client.CreateTrip(ctx, payload.ToProto())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to start trip"})
+		return
+	}
+
+	res := contracts.APIResponse{Data: trip}
+	ctx.JSON(http.StatusOK, res)
+}
+
 // previewTripHandler handles trip preview requests
 func previewTripHandler(ctx *gin.Context) {
 	var payload types.PreviewTripRequest
@@ -46,7 +76,7 @@ func previewTripHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, contracts.APIResponse{
 			Error: &contracts.APIError{
 				Code:    http.StatusBadRequest,
-				Message: "Invalid request payload",
+				Message: "invalid request payload",
 			},
 		})
 		return
@@ -68,7 +98,7 @@ func previewTripHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to preview trip"})
 		return
 	}
-	
+
 	res := contracts.APIResponse{Data: tripPreview}
 	ctx.JSON(http.StatusOK, res)
 }

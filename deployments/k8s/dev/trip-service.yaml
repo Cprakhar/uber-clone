@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trip-service
+  namespace: uber-clone
+  labels:
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trip-service
+  template:
+    metadata:
+      labels:
+        app: trip-service
+    spec:
+      containers:
+      - name: trip-service
+        image: uber-clone/trip-service:latest
+        imagePullPolicy: Never  # For local minikube builds
+        ports:
+          - containerPort: 9000
+            name: grpc
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb
+              key: uri
+        - name: OSRM_API
+          valueFrom:
+            secretKeyRef:
+              name: external-apis
+              key: osrm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trip-service
+  namespace: uber-clone
+spec:
+  selector:
+    app: trip-service
+  ports:
+  - port: 9000
+    targetPort: 9000
+    name: grpc

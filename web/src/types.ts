@@ -61,6 +61,6 @@ export interface Driver {
     location: Coordinate;
     geohash: string;
     name: string;
-    profilePicture: string;
+    profilePic: string;
     carPlate: string;
 }

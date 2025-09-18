@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: uber-clone
+  labels:
+    app: uber-clone
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uber-clone-config
+  namespace: uber-clone
+data:
+  ENVIRONMENT: "development"
+  HTTP_ADDR: ":8080"

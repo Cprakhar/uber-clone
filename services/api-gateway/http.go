@@ -33,7 +33,7 @@ func (s *httpServer) run() {
 
 	serverErrors := make(chan error, 1)
 	go func() {
-		log.Printf("server started listening on %s", s.addr)
+		log.Printf("http server started listening on %s", s.addr)
 		serverErrors <- srv.ListenAndServe()
 	}()
 

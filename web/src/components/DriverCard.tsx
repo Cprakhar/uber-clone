@@ -17,10 +17,10 @@ export const DriverCard = ({ driver, packageSlug }: { driver?: Driver | null, pa
         <CardTitle>{driver.name}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 items-center">
-        {driver.profilePicture && (
+        {driver.profilePic && (
           <Image
             className="rounded-full"
-            src={driver.profilePicture}
+            src={driver.profilePic}
             alt={`${driver.name}'s profile picture`}
             width={50}
             height={50}

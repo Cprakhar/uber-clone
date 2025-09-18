@@ -1,4 +1,4 @@
-# Build stage
+# Build Stage
 FROM golang:1.25.1-bookworm AS builder
 # Install dependencies
 RUN apt-get update && apt-get install -y pkg-config build-essential librdkafka-dev
@@ -9,10 +9,10 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download
 # Copy the source code
-COPY services/trip-service/ ./services/trip-service/
+COPY services/driver-service/ ./services/driver-service/
 COPY shared/ ./shared/
-# Build the trip-service binary
-RUN CGO_ENABLED=1 GOOS=linux CC=gcc go build -a -installsuffix cgo -o main ./services/trip-service
+# Build the driver-service binary
+RUN CGO_ENABLED=1 GOOS=linux CC=gcc go build -a -installsuffix cgo -o main ./services/driver-service
 
 # Final stage
 FROM debian:bookworm-slim
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y librdkafka1 ca-certificates
 WORKDIR /root/
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
-# Expose port 9000
-EXPOSE 9000
+# Expose port 9100
+EXPOSE 9100
 # Run the binary
 CMD ["./main"]

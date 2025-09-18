@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-service
+  namespace: uber-clone
+  labels:
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-service
+  template:
+    metadata:
+      labels:
+        app: web-service
+    spec:
+      containers:
+      - name: web-service
+        image: uber-clone/web-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        env:
+        - name: NODE_ENV
+          value: "development"
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://api-gateway.uber-clone.svc.cluster.local:8080"  # Internal service communication
+        - name: NEXT_PUBLIC_WS_URL
+          value: "ws://api-gateway.uber-clone.svc.cluster.local:8080/ws"  # Internal service communication
+        - name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stripe
+              key: stripe-publishable-key

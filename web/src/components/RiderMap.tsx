@@ -53,8 +53,6 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
         resetTripStatus
     } = useRiderStreamConnection(location, riderID);
 
-    console.log(tripStatus)
-
     const handleMapClick = async (e: L.LeafletMouseEvent) => {
         if (trip?.tripID) {
             return
@@ -71,7 +69,6 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
                 pickup: [location.latitude, location.longitude],
                 destination: [e.latlng.lat, e.latlng.lng],
             })
-            console.log(data)
 
             const parsedRoute = data.route.geometry[0].coordinates
                 .map((coord) => [coord.longitude, coord.latitude] as [number, number])
@@ -196,7 +193,7 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
                                 Car Plate: {driver?.carPlate}
                                 <br />
                                 <Image
-                                    src={driver?.profilePicture}
+                                    src={driver?.profilePic}
                                     alt={`${driver?.name}'s profile picture`}
                                     width={100}
                                     height={100}

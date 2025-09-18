@@ -2,9 +2,13 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"log"
+	"time"
 
 	"github.com/cprakhar/uber-clone/services/trip-service/service"
 	"github.com/cprakhar/uber-clone/services/trip-service/types"
+	"github.com/cprakhar/uber-clone/shared/events"
 	pb "github.com/cprakhar/uber-clone/shared/proto/trip"
 	sharedtypes "github.com/cprakhar/uber-clone/shared/types"
 	"google.golang.org/grpc"
@@ -14,13 +18,13 @@ import (
 
 type gRPCHandler struct {
 	pb.UnimplementedTripServiceServer
-	svc service.GRPCTripService
+	svc       service.GRPCTripService
+	publisher *events.TripEventProducer
 }
 
-func NewgRPCHandler(srv *grpc.Server, svc service.GRPCTripService) *gRPCHandler {
-	handler := &gRPCHandler{svc: svc}
+func NewgRPCHandler(srv *grpc.Server, svc service.GRPCTripService, p *events.TripEventProducer) {
+	handler := &gRPCHandler{svc: svc, publisher: p}
 	pb.RegisterTripServiceServer(srv, handler)
-	return handler
 }
 
 func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripRequest) (*pb.PreviewTripResponse, error) {
@@ -49,7 +53,7 @@ func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 	}
 
 	return &pb.PreviewTripResponse{
-		Route:    route.ToProto(),
+		Route:     route.ToProto(),
 		RideFares: types.ToRideFaresProto(fares),
 	}, nil
 }
@@ -66,6 +70,16 @@ func (h *gRPCHandler) CreateTrip(ctx context.Context, req *pb.CreateTripRequest)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create trip: %v", err)
 	}
+
+	// Notify other services about the new trip
+	data, err := json.Marshal(trip)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to marshal trip data: %v", err)
+	}
+	if err := h.publisher.PublishTripCreatedEventAndWait(data, trip.ID.Hex(), 5*time.Second); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to publish trip created event: %v", err)
+	}
+	log.Printf("Published trip created event for trip ID: %s", trip.ID.Hex())
 
 	return &pb.CreateTripResponse{
 		TripID: trip.ID.Hex(),

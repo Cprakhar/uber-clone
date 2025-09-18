@@ -11,6 +11,8 @@ import (
 	"github.com/cprakhar/uber-clone/services/trip-service/handler"
 	"github.com/cprakhar/uber-clone/services/trip-service/repo"
 	"github.com/cprakhar/uber-clone/services/trip-service/service"
+	"github.com/cprakhar/uber-clone/shared/events"
+	"github.com/cprakhar/uber-clone/shared/messaging"
 	"google.golang.org/grpc"
 )
 
@@ -36,16 +38,31 @@ func (s *gRPCServer) run() {
 		<-quit
 		cancel()
 	}()
-
+		
 	lis, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		log.Fatalf("failed to listen on %s: %v", s.addr, err)
 	}
+		
+	// Kafka producer connection
+	producer, err := messaging.NewProducer([]string{"kafka:9092"})
+	if err != nil {
+		log.Fatalf("failed to create Kafka producer: %v", err)
+	}
+	defer producer.Close()
+	
+	log.Println("Kafka producer connected")
 
+	// Initialize TripEventProducer
+	tripProducer := events.NewTripEventProducer(producer)
+	defer tripProducer.Kafka.Close()
+
+	// gRPC server setup
 	srv := grpc.NewServer()
-	handler.NewgRPCHandler(srv, tripService)
+	handler.NewgRPCHandler(srv, tripService, tripProducer)
 
 	go func() {
+		log.Printf("gRPC server running on %s", s.addr)
 		if err := srv.Serve(lis); err != nil {
 			log.Fatalf("failed to serve gRPC server: %v", err)
 		}

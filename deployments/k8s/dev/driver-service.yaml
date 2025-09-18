@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driver-service
+  namespace: uber-clone
+  labels:
+    component: backend
+spec:
+  selector:
+    matchLabels:
+      app: driver-service
+  template:
+    metadata:
+      labels:
+        app: driver-service
+    spec:
+      containers:
+      - name: driver-service
+        image: uber-clone/driver-service:latest
+        imagePullPolicy: Never
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 9100
+          name: grpc
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb
+              key: uri
+        - name: OSRM_API
+          valueFrom:
+            secretKeyRef:
+              name: external-apis
+              key: osrm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: driver-service
+  namespace: uber-clone
+spec:
+  selector:
+    app: driver-service
+  ports:
+  - port: 9100
+    targetPort: 9100
+    name: grpc
+
