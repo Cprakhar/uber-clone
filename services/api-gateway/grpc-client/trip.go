@@ -12,6 +12,7 @@ type tripServiceClient struct {
 	conn   *grpc.ClientConn
 }
 
+// NewTripServiceClient creates a new gRPC client for the Trip Service.
 func NewTripServiceClient() (*tripServiceClient, error) {
 	tripServiceURL := env.GetString("TRIP_SERVICE_URL", "trip-service:9000")
 	conn, err := grpc.NewClient(tripServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -23,6 +24,7 @@ func NewTripServiceClient() (*tripServiceClient, error) {
 	return &tripServiceClient{Client: client, conn: conn}, nil
 }
 
+// Close closes the gRPC connection.
 func (c *tripServiceClient) Close() error {
 	return c.conn.Close()
 }

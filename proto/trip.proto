@@ -43,7 +43,7 @@ message PreviewTripResponse {
 }
 
 message CreateTripRequest {
-    string fareID = 1;
+    string rideFareID = 1;
     string riderID = 2;
 }
 
@@ -52,7 +52,7 @@ message Trip {
     string riderID = 2;
     string status = 3;
     Route route = 4;
-    RideFare fare = 5;
+    RideFare selectedFare = 5;
     TripDriver driver = 6;
 }  
 

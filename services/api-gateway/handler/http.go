@@ -7,24 +7,25 @@ import (
 	grpcclient "github.com/cprakhar/uber-clone/services/api-gateway/grpc-client"
 	"github.com/cprakhar/uber-clone/services/api-gateway/types"
 	"github.com/cprakhar/uber-clone/shared/contracts"
+	"github.com/cprakhar/uber-clone/shared/messaging/kafka"
 	"github.com/gin-gonic/gin"
 )
 
 // NewHTTPHandler initializes the HTTP handler with routes and middleware
-func NewHTTPHandler() *gin.Engine {
+func NewHTTPHandler(kfc *kafka.KafkaClient) *gin.Engine {
 	r := gin.Default()
 
-	// Health check endpoints
 	r.GET("/health", healthHandler)
 	r.GET("/ready", readinessHandler)
 
-	// Use CORS middleware
-	// Define your middleware here
-	// Define your routes and handlers here
 	r.POST("/trip/preview", enableCORS, previewTripHandler)
 	r.POST("/trip/start", enableCORS, tripStartHandler)
-	r.GET("/ws/riders", RidersWSHandler)
-	r.GET("/ws/drivers", DriversWSHandler)
+	r.GET("/ws/riders", func(ctx *gin.Context) {
+		RidersWSHandler(ctx, kfc)
+	})
+	r.GET("/ws/drivers", func(ctx *gin.Context) {
+		DriversWSHandler(ctx, kfc)
+	})
 
 	return r
 }
@@ -103,6 +104,7 @@ func previewTripHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// enableCORS is a middleware to handle CORS requests
 func enableCORS(ctx *gin.Context) {
 	ctx.Header("Access-Control-Allow-Origin", "*")
 	ctx.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")

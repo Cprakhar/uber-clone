@@ -1,5 +1,7 @@
 # Build stage
-FROM golang:1.25.1-alpine AS builder
+FROM golang:1.25.1-bookworm AS builder
+# Install dependencies
+RUN apt-get update && apt-get install -y pkg-config build-essential librdkafka-dev
 # Set working directory
 WORKDIR /app
 # Copy go mod and sum files
@@ -10,12 +12,12 @@ RUN go mod download
 COPY services/api-gateway/ ./services/api-gateway/
 COPY shared/ ./shared/
 # Build the api-gateway binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./services/api-gateway
+RUN CGO_ENABLED=1 GOOS=linux CC=gcc go build -a -installsuffix cgo -o main ./services/api-gateway
 
 # Final stage
-FROM alpine:latest
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+FROM debian:bookworm-slim
+# Install dependencies
+RUN apt-get update && apt-get install -y librdkafka1 ca-certificates
 # Set working directory
 WORKDIR /root/
 # Copy the binary from builder stage

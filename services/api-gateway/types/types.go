@@ -11,6 +11,7 @@ type PreviewTripRequest struct {
 	Destination types.Coordinate `json:"destination" binding:"required"`
 }
 
+// ToProto converts PreviewTripRequest to its protobuf representation
 func (ptr *PreviewTripRequest) ToProto() *pb.PreviewTripRequest {
 	return &pb.PreviewTripRequest{
 		RiderID: ptr.RiderID,
@@ -30,9 +31,10 @@ type TripStartRequest struct {
 	FareID  string `json:"rideFareID" binding:"required"`
 }
 
+// ToProto converts TripStartRequest to its protobuf representation
 func (tsr *TripStartRequest) ToProto() *pb.CreateTripRequest {
 	return &pb.CreateTripRequest{
-		RiderID: tsr.RiderID,
-		FareID:  tsr.FareID,
+		RiderID:    tsr.RiderID,
+		RideFareID: tsr.FareID,
 	}
 }

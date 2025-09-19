@@ -2,13 +2,11 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"log"
-	"time"
 
+	"github.com/cprakhar/uber-clone/services/trip-service/events"
 	"github.com/cprakhar/uber-clone/services/trip-service/service"
 	"github.com/cprakhar/uber-clone/services/trip-service/types"
-	"github.com/cprakhar/uber-clone/shared/events"
 	pb "github.com/cprakhar/uber-clone/shared/proto/trip"
 	sharedtypes "github.com/cprakhar/uber-clone/shared/types"
 	"google.golang.org/grpc"
@@ -18,15 +16,17 @@ import (
 
 type gRPCHandler struct {
 	pb.UnimplementedTripServiceServer
-	svc       service.GRPCTripService
-	publisher *events.TripEventProducer
+	svc      service.TripService
+	producer *events.TripEventProducer
 }
 
-func NewgRPCHandler(srv *grpc.Server, svc service.GRPCTripService, p *events.TripEventProducer) {
-	handler := &gRPCHandler{svc: svc, publisher: p}
+// NewgRPCHandler registers the gRPC handler with the given gRPC server
+func NewgRPCHandler(srv *grpc.Server, svc service.TripService, producer *events.TripEventProducer) {
+	handler := &gRPCHandler{svc: svc, producer: producer}
 	pb.RegisterTripServiceServer(srv, handler)
 }
 
+// PreviewTrip handles the PreviewTrip gRPC request
 func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripRequest) (*pb.PreviewTripResponse, error) {
 	pickup := req.GetPickup()
 	destination := req.GetDestination()
@@ -58,8 +58,9 @@ func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 	}, nil
 }
 
+// CreateTrip handles the CreateTrip gRPC request
 func (h *gRPCHandler) CreateTrip(ctx context.Context, req *pb.CreateTripRequest) (*pb.CreateTripResponse, error) {
-	fareID := req.GetFareID()
+	fareID := req.GetRideFareID()
 	riderID := req.GetRiderID()
 	fare, err := h.svc.GetAndValidateRideFare(ctx, fareID, riderID)
 	if err != nil {
@@ -72,11 +73,7 @@ func (h *gRPCHandler) CreateTrip(ctx context.Context, req *pb.CreateTripRequest)
 	}
 
 	// Notify other services about the new trip
-	data, err := json.Marshal(trip)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal trip data: %v", err)
-	}
-	if err := h.publisher.PublishTripCreatedEventAndWait(data, trip.ID.Hex(), 5*time.Second); err != nil {
+	if err := h.producer.PublishTripCreated(trip); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to publish trip created event: %v", err)
 	}
 	log.Printf("Published trip created event for trip ID: %s", trip.ID.Hex())

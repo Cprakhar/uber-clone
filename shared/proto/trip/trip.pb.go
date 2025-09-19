@@ -367,7 +367,7 @@ func (x *PreviewTripResponse) GetRideFares() []*RideFare {
 
 type CreateTripRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FareID        string                 `protobuf:"bytes,1,opt,name=fareID,proto3" json:"fareID,omitempty"`
+	RideFareID    string                 `protobuf:"bytes,1,opt,name=rideFareID,proto3" json:"rideFareID,omitempty"`
 	RiderID       string                 `protobuf:"bytes,2,opt,name=riderID,proto3" json:"riderID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -403,9 +403,9 @@ func (*CreateTripRequest) Descriptor() ([]byte, []int) {
 	return file_trip_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *CreateTripRequest) GetFareID() string {
+func (x *CreateTripRequest) GetRideFareID() string {
 	if x != nil {
-		return x.FareID
+		return x.RideFareID
 	}
 	return ""
 }
@@ -423,7 +423,7 @@ type Trip struct {
 	RiderID       string                 `protobuf:"bytes,2,opt,name=riderID,proto3" json:"riderID,omitempty"`
 	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	Route         *Route                 `protobuf:"bytes,4,opt,name=route,proto3" json:"route,omitempty"`
-	Fare          *RideFare              `protobuf:"bytes,5,opt,name=fare,proto3" json:"fare,omitempty"`
+	SelectedFare  *RideFare              `protobuf:"bytes,5,opt,name=selectedFare,proto3" json:"selectedFare,omitempty"`
 	Driver        *TripDriver            `protobuf:"bytes,6,opt,name=driver,proto3" json:"driver,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -487,9 +487,9 @@ func (x *Trip) GetRoute() *Route {
 	return nil
 }
 
-func (x *Trip) GetFare() *RideFare {
+func (x *Trip) GetSelectedFare() *RideFare {
 	if x != nil {
-		return x.Fare
+		return x.SelectedFare
 	}
 	return nil
 }
@@ -649,16 +649,18 @@ const file_trip_proto_rawDesc = "" +
 	"\x13PreviewTripResponse\x12\x16\n" +
 	"\x06tripID\x18\x01 \x01(\tR\x06tripID\x12!\n" +
 	"\x05route\x18\x02 \x01(\v2\v.trip.RouteR\x05route\x12,\n" +
-	"\trideFares\x18\x03 \x03(\v2\x0e.trip.RideFareR\trideFares\"E\n" +
-	"\x11CreateTripRequest\x12\x16\n" +
-	"\x06fareID\x18\x01 \x01(\tR\x06fareID\x12\x18\n" +
-	"\ariderID\x18\x02 \x01(\tR\ariderID\"\xb9\x01\n" +
+	"\trideFares\x18\x03 \x03(\v2\x0e.trip.RideFareR\trideFares\"M\n" +
+	"\x11CreateTripRequest\x12\x1e\n" +
+	"\n" +
+	"rideFareID\x18\x01 \x01(\tR\n" +
+	"rideFareID\x12\x18\n" +
+	"\ariderID\x18\x02 \x01(\tR\ariderID\"\xc9\x01\n" +
 	"\x04Trip\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\ariderID\x18\x02 \x01(\tR\ariderID\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12!\n" +
-	"\x05route\x18\x04 \x01(\v2\v.trip.RouteR\x05route\x12\"\n" +
-	"\x04fare\x18\x05 \x01(\v2\x0e.trip.RideFareR\x04fare\x12(\n" +
+	"\x05route\x18\x04 \x01(\v2\v.trip.RouteR\x05route\x122\n" +
+	"\fselectedFare\x18\x05 \x01(\v2\x0e.trip.RideFareR\fselectedFare\x12(\n" +
 	"\x06driver\x18\x06 \x01(\v2\x10.trip.TripDriverR\x06driver\"L\n" +
 	"\x12CreateTripResponse\x12\x16\n" +
 	"\x06tripID\x18\x01 \x01(\tR\x06tripID\x12\x1e\n" +
@@ -710,7 +712,7 @@ var file_trip_proto_depIdxs = []int32{
 	3,  // 4: trip.PreviewTripResponse.route:type_name -> trip.Route
 	4,  // 5: trip.PreviewTripResponse.rideFares:type_name -> trip.RideFare
 	3,  // 6: trip.Trip.route:type_name -> trip.Route
-	4,  // 7: trip.Trip.fare:type_name -> trip.RideFare
+	4,  // 7: trip.Trip.selectedFare:type_name -> trip.RideFare
 	9,  // 8: trip.Trip.driver:type_name -> trip.TripDriver
 	7,  // 9: trip.CreateTripResponse.trip:type_name -> trip.Trip
 	1,  // 10: trip.TripService.PreviewTrip:input_type -> trip.PreviewTripRequest

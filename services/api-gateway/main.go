@@ -1,12 +1,44 @@
 package main
 
-import "github.com/cprakhar/uber-clone/shared/env"
+import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/cprakhar/uber-clone/shared/env"
+	"github.com/cprakhar/uber-clone/shared/messaging/kafka"
+)
 
 var (
 	httpAddr = env.GetString("HTTP_ADDR", ":8080")
+	brokers  = []string{"kafka:9092"}
+	groupID  = "api-gateway-group"
 )
 
 func main() {
-	httpServer := NewHTTPServer(httpAddr)
-	httpServer.run()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// Initialize Kafka client
+	kfClient, err := kafka.NewKafkaClient(brokers, groupID)
+	if err != nil {
+		log.Fatalf("Failed to create Kafka client: %v", err)
+	}
+	defer kfClient.Close()
+	log.Println("Kafka client connected")
+
+	// Start http server
+	httpServer := NewhttpServer(httpAddr, kfClient)
+	go func() {
+		if err := httpServer.run(ctx); err != nil && ctx.Err() == nil {
+			log.Printf("http server error: %v", err)
+			stop()
+		}
+	}()
+
+	// Wait for shutdown signal
+	<-ctx.Done()
+	log.Println("Shutdown signal received, exiting...")
 }

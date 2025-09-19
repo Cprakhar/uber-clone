@@ -14,23 +14,26 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type grpcTripService struct {
+type tripService struct {
 	repo repo.TripRepo
 }
 
-type GRPCTripService interface {
+type TripService interface {
 	CreateTrip(ctx context.Context, fare *types.RideFareModel) (*types.TripModel, error)
 	GetRoute(ctx context.Context, pickup, destination *sharedtypes.Coordinate) (*types.OSRMApiResponse, error)
 	EstimatePackagesPriceWithRoute(route *types.OSRMApiResponse) []*types.RideFareModel
 	GenerateTripFares(ctx context.Context, fares []*types.RideFareModel, riderID string, route *types.OSRMApiResponse) ([]*types.RideFareModel, error)
 	GetAndValidateRideFare(ctx context.Context, fareID, riderID string) (*types.RideFareModel, error)
+	AcceptRide(ctx context.Context, tripID string, driver *trip.TripDriver) (*types.TripModel, error)
 }
 
-func NewgRPCService(repo repo.TripRepo) *grpcTripService {
-	return &grpcTripService{repo: repo}
+// NewService creates a new instance of GrpcTripService
+func NewService(repo repo.TripRepo) *tripService {
+	return &tripService{repo: repo}
 }
 
-func (s *grpcTripService) CreateTrip(ctx context.Context, fare *types.RideFareModel) (*types.TripModel, error) {
+// CreateTrip creates a new trip based on the provided fare
+func (s *tripService) CreateTrip(ctx context.Context, fare *types.RideFareModel) (*types.TripModel, error) {
 	trip := &types.TripModel{
 		ID:       primitive.NewObjectID(),
 		RiderID:  fare.RiderID,
@@ -41,7 +44,8 @@ func (s *grpcTripService) CreateTrip(ctx context.Context, fare *types.RideFareMo
 	return s.repo.Create(ctx, trip)
 }
 
-func (s *grpcTripService) GetRoute(ctx context.Context, pickup, destination *sharedtypes.Coordinate) (*types.OSRMApiResponse, error) {
+// GetRoute fetches the route from OSRM API between pickup and destination coordinates
+func (s *tripService) GetRoute(ctx context.Context, pickup, destination *sharedtypes.Coordinate) (*types.OSRMApiResponse, error) {
 	url := fmt.Sprintf("http://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=geojson",
 		pickup.Longitude, pickup.Latitude,
 		destination.Longitude, destination.Latitude,
@@ -66,7 +70,8 @@ func (s *grpcTripService) GetRoute(ctx context.Context, pickup, destination *sha
 	return &routeResponse, nil
 }
 
-func (s *grpcTripService) EstimatePackagesPriceWithRoute(route *types.OSRMApiResponse) []*types.RideFareModel {
+// EstimatePackagesPriceWithRoute estimates prices for different car packages based on the provided route
+func (s *tripService) EstimatePackagesPriceWithRoute(route *types.OSRMApiResponse) []*types.RideFareModel {
 	baseFares := getBaseFares()
 	estimatedFares := make([]*types.RideFareModel, len(baseFares))
 
@@ -76,15 +81,16 @@ func (s *grpcTripService) EstimatePackagesPriceWithRoute(route *types.OSRMApiRes
 	return estimatedFares
 }
 
-func (s *grpcTripService) GenerateTripFares(ctx context.Context, rideFares []*types.RideFareModel, riderID string, route *types.OSRMApiResponse) ([]*types.RideFareModel, error) {
+// GenerateTripFares generates and saves ride fares for a rider based on the provided estimated fares and route
+func (s *tripService) GenerateTripFares(ctx context.Context, rideFares []*types.RideFareModel, riderID string, route *types.OSRMApiResponse) ([]*types.RideFareModel, error) {
 	fares := make([]*types.RideFareModel, len(rideFares))
 	for i, fare := range rideFares {
 		f := &types.RideFareModel{
-			RiderID:           riderID,
-			ID:                primitive.NewObjectID(),
-			PackageSlug:       fare.PackageSlug,
+			RiderID:          riderID,
+			ID:               primitive.NewObjectID(),
+			PackageSlug:      fare.PackageSlug,
 			TotalFareInPaise: fare.TotalFareInPaise,
-			Route:             route,
+			Route:            route,
 		}
 
 		if err := s.repo.SaveRideFare(ctx, f); err != nil {
@@ -96,7 +102,8 @@ func (s *grpcTripService) GenerateTripFares(ctx context.Context, rideFares []*ty
 	return fares, nil
 }
 
-func (s *grpcTripService) GetAndValidateRideFare(ctx context.Context, fareID, riderID string) (*types.RideFareModel, error) {
+// GetAndValidateRideFare retrieves a ride fare by ID and validates that it belongs to the specified rider
+func (s *tripService) GetAndValidateRideFare(ctx context.Context, fareID, riderID string) (*types.RideFareModel, error) {
 	fare, err := s.repo.GetRideFareByID(ctx, fareID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ride fare: %v", err)
@@ -113,6 +120,12 @@ func (s *grpcTripService) GetAndValidateRideFare(ctx context.Context, fareID, ri
 	return fare, nil
 }
 
+// AcceptRide allows a driver to accept a trip, updating the trip with the driver's details
+func (s *tripService) AcceptRide(ctx context.Context, tripID string, driver *trip.TripDriver) (*types.TripModel, error) {
+	return s.repo.UpdateWithDriver(ctx, tripID, driver)
+}
+
+// estimateFareRoute estimates the total fare for a given route and base fare
 func estimateFareRoute(route *types.OSRMApiResponse, fare *types.RideFareModel) *types.RideFareModel {
 	pricingCfg := types.DefaultPricingConfig()
 	carPackagePrice := fare.TotalFareInPaise
@@ -126,27 +139,28 @@ func estimateFareRoute(route *types.OSRMApiResponse, fare *types.RideFareModel) 
 	totalFare := carPackagePrice + distanceFare + durationFare
 
 	return &types.RideFareModel{
-		PackageSlug:       fare.PackageSlug,
+		PackageSlug:      fare.PackageSlug,
 		TotalFareInPaise: totalFare,
 	}
 }
 
+// getBaseFares returns a list of base fares for different car packages
 func getBaseFares() []*types.RideFareModel {
 	return []*types.RideFareModel{
 		{
-			PackageSlug:       "bike",
+			PackageSlug:      "bike",
 			TotalFareInPaise: 50.0,
 		},
 		{
-			PackageSlug:       "auto",
+			PackageSlug:      "auto",
 			TotalFareInPaise: 70.0,
 		},
 		{
-			PackageSlug:       "sedan",
+			PackageSlug:      "sedan",
 			TotalFareInPaise: 100.0,
 		},
 		{
-			PackageSlug:       "suv",
+			PackageSlug:      "suv",
 			TotalFareInPaise: 150.0,
 		},
 	}

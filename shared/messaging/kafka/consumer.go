@@ -1,8 +1,9 @@
-package messaging
+package kafka
 
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
@@ -13,14 +14,13 @@ type Consumer struct {
 }
 
 // NewConsumer creates a confluent consumer with safe defaults.
-func NewConsumer(brokerID string, groupID string) (*Consumer, error) {
+func newConsumer(brokers []string, groupID string) (*Consumer, error) {
 	cfg := &kafka.ConfigMap{
-		"bootstrap.servers":  brokerID,
+		"bootstrap.servers":  strings.Join(brokers, ","),
 		"group.id":           groupID,
 		"auto.offset.reset":  "earliest",
 		"enable.auto.commit": false,
 		"session.timeout.ms": 6000,
-		"enable.partition.eof": true,
 	}
 
 	cr, err := kafka.NewConsumer(cfg)
@@ -34,9 +34,9 @@ func NewConsumer(brokerID string, groupID string) (*Consumer, error) {
 // MessageHandler defines the function signature for processing Kafka messages.
 type MessageHandler func(context.Context, *kafka.Message) error
 
-// SubscribeAndConsume subscribes to the given topic and processes messages using the provided handler.
-func (c *Consumer) SubscribeAndConsume(ctx context.Context, topic string, handler MessageHandler) error {
-	if err := c.cr.Subscribe(topic, nil); err != nil {
+// subscribeAndConsume subscribes to the given topic and processes messages using the provided handler.
+func (c *Consumer) SubscribeAndConsume(ctx context.Context, topics []string, handler MessageHandler) error {
+	if err := c.cr.SubscribeTopics(topics, nil); err != nil {
 		return err
 	}
 
@@ -64,13 +64,15 @@ func (c *Consumer) SubscribeAndConsume(ctx context.Context, topic string, handle
 				}
 			case kafka.Error:
 				log.Printf("Kafka error: %v, code: %v\n", ev, ev.Code())
-			case kafka.PartitionEOF:
-				log.Printf("Reached end of partition: %v\n", ev)
 			default:
 				log.Printf("Ignored event: %v\n", ev)
 			}
 		}
 	}
+}
+
+func (c *Consumer) Subscribe(topics []string) error {
+	return c.cr.SubscribeTopics(topics, nil)
 }
 
 // Close shuts down the consumer.

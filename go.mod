@@ -6,6 +6,7 @@ require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.11.1
 	github.com/gin-gonic/gin v1.10.1
 	github.com/gorilla/websocket v1.5.3
+	github.com/mmcloughlin/geohash v0.10.0
 	go.mongodb.org/mongo-driver v1.17.4
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.6

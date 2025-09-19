@@ -28,7 +28,7 @@ export const useDriverStreamConnection = ({
   useEffect(() => {
     if (!driverID) return;
 
-    const websocket = new WebSocket(`${WEBSOCKET_URL}${BackendEndpoints.WS_DRIVERS}?driver_id=${driverID}&packageSlug=${packageSlug}`);
+    const websocket = new WebSocket(`${WEBSOCKET_URL}${BackendEndpoints.WS_DRIVERS}?driverID=${driverID}&packageSlug=${packageSlug}`);
     setWs(websocket);
 
     websocket.onopen = () => {

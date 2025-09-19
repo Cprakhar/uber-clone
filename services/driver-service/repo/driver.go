@@ -3,35 +3,45 @@ package repo
 import (
 	"sync"
 
-	"github.com/cprakhar/uber-clone/services/driver-service/types"
+	pb "github.com/cprakhar/uber-clone/shared/proto/driver"
 )
 
 type inMemoRepo struct {
 	sync.RWMutex
-	drivers map[string]*types.DriverModel
+	drivers []*pb.Driver
 }
 
 type DriverRepo interface {
-	Create(driver *types.DriverModel) (*types.DriverModel, error)
+	Create(driver *pb.Driver) (*pb.Driver, error)
 	Delete(driverID string) error
+	GetAll() []*pb.Driver
 }
 
 func NewDriverRepository() *inMemoRepo {
 	return &inMemoRepo{
-		drivers: make(map[string]*types.DriverModel),
+		drivers: []*pb.Driver{},
 	}
 }
 
-func (r *inMemoRepo) Create(driver *types.DriverModel) (*types.DriverModel, error) {
+func (r *inMemoRepo) Create(driver *pb.Driver) (*pb.Driver, error) {
 	r.Lock()
-	r.drivers[driver.ID] = driver
+	r.drivers = append(r.drivers, driver)
 	r.Unlock()
 	return driver, nil
 }
 
 func (r *inMemoRepo) Delete(driverID string) error {
 	r.Lock()
-	delete(r.drivers, driverID)
+	for i, d := range r.drivers {
+		if d.Id == driverID {
+			r.drivers = append(r.drivers[:i], r.drivers[i+1:]...)
+			break
+		}
+	}
 	r.Unlock()
 	return nil
+}
+
+func (r *inMemoRepo) GetAll() []*pb.Driver {
+	return r.drivers
 }

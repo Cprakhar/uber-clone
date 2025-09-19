@@ -13,6 +13,19 @@ type TripModel struct {
 	Driver   *pb.TripDriver
 }
 
+// ToProto converts TripModel to its protobuf representation
+func (t *TripModel) ToProto() *pb.Trip {
+	return &pb.Trip{
+		Id:           t.ID.Hex(),
+		RiderID:      t.RiderID,
+		Route:        t.RideFare.Route.ToProto(),
+		Status:       t.Status,
+		SelectedFare: t.RideFare.ToProto(),
+		Driver:       t.Driver,
+	}
+
+}
+
 type RideFareModel struct {
 	ID               primitive.ObjectID
 	RiderID          string
@@ -21,6 +34,7 @@ type RideFareModel struct {
 	Route            *OSRMApiResponse
 }
 
+// ToProto converts RideFareModel to its protobuf representation
 func (r *RideFareModel) ToProto() *pb.RideFare {
 	return &pb.RideFare{
 		Id:               r.ID.Hex(),
@@ -40,6 +54,7 @@ type OSRMApiResponse struct {
 	} `json:"routes"`
 }
 
+// ToProto converts OSRMApiResponse to its protobuf representation
 func (o *OSRMApiResponse) ToProto() *pb.Route {
 	if len(o.Routes) == 0 {
 		return &pb.Route{}
@@ -67,6 +82,7 @@ func (o *OSRMApiResponse) ToProto() *pb.Route {
 	}
 }
 
+// ToRideFaresProto converts a slice of RideFareModel to their protobuf representations
 func ToRideFaresProto(fares []*RideFareModel) []*pb.RideFare {
 	protoFares := make([]*pb.RideFare, len(fares))
 	for i, fare := range fares {
@@ -80,6 +96,7 @@ type PricingConfig struct {
 	PricePerMinute       float64
 }
 
+// DefaultPricingConfig returns a default pricing configuration
 func DefaultPricingConfig() *PricingConfig {
 	return &PricingConfig{
 		PricePerUnitDistance: 10.0, // 10 Rs per km

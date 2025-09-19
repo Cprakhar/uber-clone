@@ -1,13 +1,15 @@
-package messaging
+package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/cprakhar/uber-clone/shared/contracts"
 )
 
 type Producer struct {
@@ -15,7 +17,7 @@ type Producer struct {
 }
 
 // NewProducer creates a confluent producer with safe defaults.
-func NewProducer(brokers []string) (*Producer, error) {
+func newProducer(brokers []string) (*Producer, error) {
 	cfg := &kafka.ConfigMap{
 		"bootstrap.servers":                     strings.Join(brokers, ","),
 		"security.protocol":                     "PLAINTEXT",
@@ -58,11 +60,16 @@ func NewProducer(brokers []string) (*Producer, error) {
 	return &Producer{pr: pr}, nil
 }
 
-func (p *Producer) SendMessage(topic string, payload []byte, entityID string) error {
+func (p *Producer) SendMessage(topic string, message *contracts.KafkaMessage) error {
+	data, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal the message: %w", err)
+	}
+
 	msg := &kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Key:            []byte(entityID),
-		Value:          payload,
+		Key:            []byte(message.EntityID),
+		Value:          data,
 	}
 
 	return p.pr.Produce(msg, nil)
