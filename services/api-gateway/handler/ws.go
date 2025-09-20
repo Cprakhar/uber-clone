@@ -12,12 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	connManager = messaging.NewConnectionManager()
-)
-
 // RidersWSHandler handles WebSocket connections for riders
-func RidersWSHandler(ctx *gin.Context, kfc *kafka.KafkaClient) {
+func RidersWSHandler(ctx *gin.Context, kfc *kafka.KafkaClient, connManager *messaging.ConnectionManager) {
 	conn, err := connManager.Upgrade(ctx.Writer, ctx.Request)
 	if err != nil {
 		log.Printf("Websocket upgrade failed: %v", err)
@@ -35,30 +31,18 @@ func RidersWSHandler(ctx *gin.Context, kfc *kafka.KafkaClient) {
 	connManager.Add(riderID, conn)
 	defer connManager.Remove(riderID)
 
-	topics := []string{
-		contracts.TripEventNoDriversFound,
-	}
-
-	topicConsumer := messaging.NewTopicConsumer(kfc, connManager, topics)
-
-	go func() {
-		if err := topicConsumer.Consume(ctx); err != nil {
-			log.Printf("Error consuming topics: %v", err)
-		}
-	}()
-
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Printf("Error reading message: %v", err)
 			break
 		}
-		log.Printf("Received message from rider %s: %s", riderID, message)
+		log.Printf("Received message to rider %s: %s", riderID, message)
 	}
 }
 
 // DriversWSHandler handles WebSocket connections for drivers
-func DriversWSHandler(ctx *gin.Context, kfc *kafka.KafkaClient) {
+func DriversWSHandler(ctx *gin.Context, kfc *kafka.KafkaClient, connManager *messaging.ConnectionManager) {
 	conn, err := connManager.Upgrade(ctx.Writer, ctx.Request)
 	if err != nil {
 		log.Printf("Websocket upgrade failed: %v", err)
@@ -117,18 +101,6 @@ func DriversWSHandler(ctx *gin.Context, kfc *kafka.KafkaClient) {
 		return
 	}
 
-	topics := []string{
-		contracts.DriverCmdTripRequest,
-	}
-
-	topicConsumer := messaging.NewTopicConsumer(kfc, connManager, topics)
-
-	go func() {
-		if err := topicConsumer.Consume(ctx); err != nil {
-			log.Printf("Error consuming topics: %v", err)
-		}
-	}()
-
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -152,7 +124,7 @@ func DriversWSHandler(ctx *gin.Context, kfc *kafka.KafkaClient) {
 			// Update driver location in the system
 			continue
 		case contracts.DriverCmdTripAccept, contracts.DriverCmdTripDecline:
-			// Notify trip service about trip acceptance
+			// Notify trip service about trip acceptance/decline
 			if err := kfc.Producer.SendMessage(dm.Type, &contracts.KafkaMessage{
 				EntityID: driverID,
 				Data:     dm.Data,

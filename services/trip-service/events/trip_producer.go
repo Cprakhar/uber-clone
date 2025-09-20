@@ -32,7 +32,7 @@ func (tep *TripEventProducer) PublishTripCreated(trip *types.TripModel, timeout 
 	}
 
 	return tep.k.Producer.SendMessage(contracts.TripEventCreated, &contracts.KafkaMessage{
-		EntityID: trip.ID.Hex(),
+		EntityID: trip.RiderID,
 		Data:     data,
 	})
 }

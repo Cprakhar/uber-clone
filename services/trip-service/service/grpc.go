@@ -25,11 +25,16 @@ type TripService interface {
 	GenerateTripFares(ctx context.Context, fares []*types.RideFareModel, riderID string, route *types.OSRMApiResponse) ([]*types.RideFareModel, error)
 	GetAndValidateRideFare(ctx context.Context, fareID, riderID string) (*types.RideFareModel, error)
 	AcceptRide(ctx context.Context, tripID string, driver *trip.TripDriver) (*types.TripModel, error)
+	GetTripByID(ctx context.Context, tripID string) (*types.TripModel, error)
 }
 
 // NewService creates a new instance of GrpcTripService
 func NewService(repo repo.TripRepo) *tripService {
 	return &tripService{repo: repo}
+}
+
+func (s *tripService) GetTripByID(ctx context.Context, tripID string) (*types.TripModel, error) {
+	return s.repo.GetByID(ctx, tripID)
 }
 
 // CreateTrip creates a new trip based on the provided fare

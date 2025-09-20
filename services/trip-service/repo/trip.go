@@ -24,6 +24,7 @@ type TripRepo interface {
 	SaveRideFare(ctx context.Context, fare *types.RideFareModel) error
 	GetRideFareByID(ctx context.Context, fareID string) (*types.RideFareModel, error)
 	UpdateWithDriver(ctx context.Context, tripID string, driver *pbd.TripDriver) (*types.TripModel, error)
+	GetByID(ctx context.Context, tripID string) (*types.TripModel, error)
 }
 
 // NewInMemoRepository creates a new instance of in-memory TripRepo
@@ -32,6 +33,16 @@ func NewInMemoRepository() *inMemoRepo {
 		trips:     make(map[string]*types.TripModel),
 		rideFares: make(map[string]*types.RideFareModel),
 	}
+}
+
+func (r *inMemoRepo) GetByID(ctx context.Context, tripID string) (*types.TripModel, error) {
+	r.RLock()
+	trip, exists := r.trips[tripID]
+	r.RUnlock()
+	if !exists {
+		return nil, ErrNotFound
+	}
+	return trip, nil
 }
 
 // Create adds a new trip to the in-memory store

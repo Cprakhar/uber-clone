@@ -13,20 +13,19 @@ import (
 type TopicConsumer struct {
 	kf      *kafka.KafkaClient
 	connMgr *ConnectionManager
-	topic   []string
+	topics  []string
 }
 
-func NewTopicConsumer(kf *kafka.KafkaClient, connMgr *ConnectionManager, topic []string) *TopicConsumer {
+func NewTopicConsumer(kf *kafka.KafkaClient, connMgr *ConnectionManager, topics []string) *TopicConsumer {
 	return &TopicConsumer{
 		kf:      kf,
 		connMgr: connMgr,
-		topic:   topic,
+		topics:  topics,
 	}
 }
 
 func (tc *TopicConsumer) Consume(ctx context.Context) error {
-	defer tc.kf.Consumer.Close()
-	return tc.kf.Consumer.SubscribeAndConsume(ctx, tc.topic,
+	return tc.kf.Consumer.SubscribeAndConsume(ctx, tc.topics,
 		func(ctx context.Context, msg *ckafka.Message) error {
 			var kfMsg contracts.KafkaMessage
 			if err := json.Unmarshal(msg.Value, &kfMsg); err != nil {
@@ -50,7 +49,6 @@ func (tc *TopicConsumer) Consume(ctx context.Context) error {
 			}
 
 			return tc.connMgr.SendMessage(entityID, clientMsg)
-
 		},
 	)
 }

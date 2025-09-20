@@ -50,12 +50,39 @@ func (dc *DriverConsumer) Consume(ctx context.Context, topics []string) error {
 				return err
 			}
 		case contracts.DriverCmdTripDecline:
-			// Handle trip decline
-
+			log.Printf("Driver declined trip %s", payload.TripID)
+			dc.handleTripDecline(ctx, payload.TripID)
 		}
 
 		return nil
 	})
+}
+
+func (dc *DriverConsumer) handleTripDecline(ctx context.Context, tripID string) error {
+	trip, err := dc.svc.GetTripByID(ctx, tripID)
+	if err != nil {
+		log.Printf("Failed to get trip by ID: %v", err)
+		return err
+	}
+
+	tripEventData := &messaging.TripEventData{
+		Trip: trip.ToProto(),
+	}
+
+	data, err := json.Marshal(tripEventData)
+	if err != nil {
+		log.Printf("Failed to marshal trip event data: %v", err)
+	}
+
+	// Notify driver service to find another driver
+	if err := dc.kfClient.Producer.SendMessage(contracts.TripEventDriverNotInterested, &contracts.KafkaMessage{
+		EntityID: trip.RiderID,
+		Data:     data,
+	}); err != nil {
+		log.Printf("Failed to send driver not interested message: %v", err)
+	}
+
+	return nil
 }
 
 // handleTripAccept processes a trip acceptance from a driver.

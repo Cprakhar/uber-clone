@@ -71,10 +71,6 @@ func (c *Consumer) SubscribeAndConsume(ctx context.Context, topics []string, han
 	}
 }
 
-func (c *Consumer) Subscribe(topics []string) error {
-	return c.cr.SubscribeTopics(topics, nil)
-}
-
 // Close shuts down the consumer.
 func (c *Consumer) Close() {
 	if c.cr != nil {

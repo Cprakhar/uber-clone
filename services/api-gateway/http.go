@@ -8,23 +8,25 @@ import (
 	"time"
 
 	"github.com/cprakhar/uber-clone/services/api-gateway/handler"
+	"github.com/cprakhar/uber-clone/shared/messaging"
 	"github.com/cprakhar/uber-clone/shared/messaging/kafka"
 )
 
 type httpServer struct {
-	addr     string
-	kfClient *kafka.KafkaClient
+	addr        string
+	kfClient    *kafka.KafkaClient
+	connManager *messaging.ConnectionManager
 }
 
 // NewhttpServer creates a new http server instance
-func NewhttpServer(addr string, kfc *kafka.KafkaClient) *httpServer {
-	return &httpServer{addr: addr, kfClient: kfc}
+func NewhttpServer(addr string, kfc *kafka.KafkaClient, connMgr *messaging.ConnectionManager) *httpServer {
+	return &httpServer{addr: addr, kfClient: kfc, connManager: connMgr}
 }
 
 // run starts the http server
 func (s *httpServer) run(ctx context.Context) error {
 	// http server setup
-	h := handler.NewHTTPHandler(s.kfClient)
+	h := handler.NewHTTPHandler(s.kfClient, s.connManager)
 	srv := &http.Server{
 		Addr:    s.addr,
 		Handler: h,

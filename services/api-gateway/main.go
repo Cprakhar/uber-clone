@@ -7,7 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/cprakhar/uber-clone/shared/contracts"
 	"github.com/cprakhar/uber-clone/shared/env"
+	"github.com/cprakhar/uber-clone/shared/messaging"
 	"github.com/cprakhar/uber-clone/shared/messaging/kafka"
 )
 
@@ -15,6 +17,13 @@ var (
 	httpAddr = env.GetString("HTTP_ADDR", ":8080")
 	brokers  = []string{"kafka:9092"}
 	groupID  = "api-gateway-group"
+	topics   = []string{
+		contracts.TripEventNoDriversFound,
+		contracts.TripEventDriverAssigned,
+		contracts.DriverCmdTripRequest,
+	}
+
+	connManager = messaging.NewConnectionManager()
 )
 
 func main() {
@@ -29,8 +38,16 @@ func main() {
 	defer kfClient.Close()
 	log.Println("Kafka client connected")
 
+	topicConsumer := messaging.NewTopicConsumer(kfClient, connManager, topics)
+	go func() {
+		if err := topicConsumer.Consume(ctx); err != nil && ctx.Err() == nil {
+			log.Printf("Error consuming topics: %v", err)
+		}
+		stop()
+	}()
+
 	// Start http server
-	httpServer := NewhttpServer(httpAddr, kfClient)
+	httpServer := NewhttpServer(httpAddr, kfClient, connManager)
 	go func() {
 		if err := httpServer.run(ctx); err != nil && ctx.Err() == nil {
 			log.Printf("http server error: %v", err)

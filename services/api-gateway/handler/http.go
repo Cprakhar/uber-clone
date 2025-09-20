@@ -7,12 +7,13 @@ import (
 	grpcclient "github.com/cprakhar/uber-clone/services/api-gateway/grpc-client"
 	"github.com/cprakhar/uber-clone/services/api-gateway/types"
 	"github.com/cprakhar/uber-clone/shared/contracts"
+	"github.com/cprakhar/uber-clone/shared/messaging"
 	"github.com/cprakhar/uber-clone/shared/messaging/kafka"
 	"github.com/gin-gonic/gin"
 )
 
 // NewHTTPHandler initializes the HTTP handler with routes and middleware
-func NewHTTPHandler(kfc *kafka.KafkaClient) *gin.Engine {
+func NewHTTPHandler(kfc *kafka.KafkaClient, connMgr *messaging.ConnectionManager) *gin.Engine {
 	r := gin.Default()
 
 	r.GET("/health", healthHandler)
@@ -21,10 +22,10 @@ func NewHTTPHandler(kfc *kafka.KafkaClient) *gin.Engine {
 	r.POST("/trip/preview", enableCORS, previewTripHandler)
 	r.POST("/trip/start", enableCORS, tripStartHandler)
 	r.GET("/ws/riders", func(ctx *gin.Context) {
-		RidersWSHandler(ctx, kfc)
+		RidersWSHandler(ctx, kfc, connMgr)
 	})
 	r.GET("/ws/drivers", func(ctx *gin.Context) {
-		DriversWSHandler(ctx, kfc)
+		DriversWSHandler(ctx, kfc, connMgr)
 	})
 
 	return r

@@ -10,7 +10,9 @@ k8s_yaml("deployments/k8s/dev/secrets.yaml")
 k8s_yaml("deployments/k8s/dev/zookeeper.yaml")
 k8s_resource("zookeeper", port_forwards="2181:2181", labels=["messaging"])
 k8s_yaml("deployments/k8s/dev/kafka.yaml")
-k8s_resource("kafka", port_forwards=["9092:9092", "29092:29092"], labels=["messaging"])
+k8s_resource("kafka", port_forwards=["9092:9092", "29092:29092"],
+    resource_deps=["zookeeper"], labels=["messaging"]
+)
 
 # Deploy the API Gateway
 docker_build_with_restart("uber-clone/api-gateway:latest", ".",

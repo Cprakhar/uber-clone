@@ -62,7 +62,7 @@ func (tec *TripConsumer) handleFindAndNotifyDrivers(ctx context.Context, payload
 
 		// Notify trip service about unavailability of drivers
 		if err := tec.kfClient.Producer.SendMessage(contracts.TripEventNoDriversFound, &contracts.KafkaMessage{
-			EntityID: payload.Trip.Id,
+			EntityID: payload.Trip.RiderID,
 		}); err != nil {
 			log.Printf("failed to notify trip service about no drivers found: %v", err)
 		}
