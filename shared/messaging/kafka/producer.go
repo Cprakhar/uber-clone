@@ -75,13 +75,19 @@ func (p *Producer) SendMessage(topic string, message *contracts.KafkaMessage) er
 	return p.pr.Produce(msg, nil)
 }
 
-func (p *Producer) SendMessageAndWait(topic string, payload []byte, entityID string, timeout time.Duration) error {
+func (p *Producer) SendMessageAndWait(ctx context.Context, topic string, message *contracts.KafkaMessage, timeout time.Duration) error {
 	deliveryChan := make(chan kafka.Event)
 	defer close(deliveryChan)
+
+	data, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal the message: %w", err)
+	}
+
 	msg := &kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Key:            []byte(entityID),
-		Value:          payload,
+		Key:            []byte(message.EntityID),
+		Value:          data,
 	}
 
 	if err := p.pr.Produce(msg, deliveryChan); err != nil {
@@ -89,6 +95,8 @@ func (p *Producer) SendMessageAndWait(topic string, payload []byte, entityID str
 	}
 
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case ev := <-deliveryChan:
 		m := ev.(*kafka.Message)
 		if m.TopicPartition.Error != nil {

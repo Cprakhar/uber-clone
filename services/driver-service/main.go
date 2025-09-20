@@ -42,7 +42,6 @@ func main() {
 		if err := tripConsumer.Consume(ctx, topics); err != nil {
 			log.Printf("Error consuming trip topics: %v", err)
 		}
-		<-ctx.Done()
 	}()
 
 	// Start gRPC server

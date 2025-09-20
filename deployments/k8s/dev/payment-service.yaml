@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: uber-clone
+  labels:
+    app: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: uber-clone/payment-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9200
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+          env:
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe
+                  key: stripe-secret-key
+            - name: STRIPE_SUCCESS_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: stripe-success-url
+                  name: uber-clone-config
+            - name: STRIPE_CANCEL_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: stripe-cancel-url
+                  name: uber-clone-config
+            - name: STRIPE_PUBLISHABLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe
+                  key: stripe-publishable-key
+            - name: APP_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: app-url
+                  name: uber-clone-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: uber-clone
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 9200
+      targetPort: 9200
+      name: grpc
+  type: ClusterIP

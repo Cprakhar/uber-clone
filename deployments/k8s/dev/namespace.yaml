@@ -11,5 +11,8 @@ metadata:
   name: uber-clone-config
   namespace: uber-clone
 data:
-  ENVIRONMENT: "development"
-  HTTP_ADDR: ":8080"
+  environment: "development"
+  http-addr: ":8080"
+  app-url: "http://localhost:3000"
+  stripe-success-url: "http://localhost:3000?payment=success"
+  stripe-cancel-url: "http://localhost:3000?payment=cancel"

@@ -14,6 +14,24 @@ k8s_resource("kafka", port_forwards=["9092:9092", "29092:29092"],
     resource_deps=["zookeeper"], labels=["messaging"]
 )
 
+
+# Deploy the Payment Service
+docker_build_with_restart("uber-clone/payment-service:latest", ".",
+    dockerfile="services/payment-service/Dockerfile",
+    entrypoint=["./main"],
+    only=["./services/payment-service", "./shared", "./go.mod", "./go.sum"],
+    live_update=[
+        sync("services/payment-service", "/app/services/payment-service"),
+        sync("shared", "/app/shared"),
+    ]
+)
+
+k8s_yaml("deployments/k8s/dev/payment-service.yaml")
+k8s_resource("payment-service", port_forwards="9200:9200",
+    resource_deps=["kafka"],
+    labels=["backend"]
+)
+
 # Deploy the API Gateway
 docker_build_with_restart("uber-clone/api-gateway:latest", ".",
     dockerfile="services/api-gateway/Dockerfile",

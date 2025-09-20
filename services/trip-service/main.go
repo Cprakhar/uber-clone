@@ -42,7 +42,6 @@ func main() {
 		if err := driverConsumer.Consume(ctx, topics); err != nil {
 			log.Printf("Error consuming driver topics: %v", err)
 		}
-		<-ctx.Done()
 	}()
 
 	// Start gRPC server

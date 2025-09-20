@@ -26,7 +26,6 @@ func NewDriverConsumer(kfClient *kafka.KafkaClient, svc service.TripService) *Dr
 
 // Consume starts consuming messages from the specified topics and processes them.
 func (dc *DriverConsumer) Consume(ctx context.Context, topics []string) error {
-	defer dc.kfClient.Consumer.Close()
 	return dc.kfClient.Consumer.SubscribeAndConsume(ctx, topics, func(ctx context.Context, msg *ckafka.Message) error {
 
 		var kafkaMsg contracts.KafkaMessage
@@ -113,6 +112,29 @@ func (dc *DriverConsumer) handleTripAccept(ctx context.Context, tripID string, d
 		return err
 	}
 
-	// Notify payment service to initiate payment
+	paymentTripResponseData := &messaging.PaymentTripResponseData{
+		TripID:   tripID,
+		RiderID:  updatedTrip.RiderID,
+		DriverID: driver.Id,
+		Amount:   updatedTrip.RideFare.TotalFareInPaise,
+		Currency: "INR",
+	}
+
+	data, err = json.Marshal(paymentTripResponseData)
+	if err != nil {
+		log.Printf("Failed to marshal payment trip response data: %v", err)
+		return err
+	}
+
+	// Notify payment service to create a payment session
+	if err := dc.kfClient.Producer.SendMessage(contracts.PaymentCmdCreateSession, &contracts.KafkaMessage{
+		EntityID: updatedTrip.RiderID,
+		Data:     data,
+	}); err != nil {
+		log.Printf("Failed to send payment command create session message: %v", err)
+		return err
+	}
+
+	log.Printf("Trip %s accepted by driver %s", tripID, driver.Id)
 	return nil
 }

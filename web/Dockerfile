@@ -19,7 +19,9 @@ FROM node:22.19.0-alpine AS runner
 WORKDIR /app
 # Copy built application and production dependencies from the builder stage
 COPY --from=builder /app ./
+# Make the entrypoint script executable
+RUN chmod +x ./entrypoint.sh
 # Expose the port
 EXPOSE 3000
 # Start the Next.js application
-CMD ["npm", "start"]
+CMD ["./entrypoint.sh"]

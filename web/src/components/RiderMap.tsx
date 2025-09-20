@@ -10,7 +10,7 @@ import { MapClickHandler } from './MapClickHandler';
 import { Button } from './ui/button';
 import { RouteFare, RequestRideProps, TripPreview, HTTPTripStartResponse } from "../types";
 import { RoutingControl } from "./RoutingControl";
-import { API_URL } from '../constants';
+import { API_URL } from '../constants'
 import { RiderTripOverview } from './RiderTripOverview';
 import { BackendEndpoints, HTTPTripPreviewRequestPayload, HTTPTripPreviewResponse, HTTPTripStartRequestPayload } from '../contracts';
 import { v4 } from 'uuid';

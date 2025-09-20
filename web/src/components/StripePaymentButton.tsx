@@ -1,3 +1,4 @@
+import { STRIPE_PUBLISHABLE_KEY } from "@/constants"
 import { PaymentEventSessionCreatedData } from "../contracts"
 import { Button } from "./ui/button"
 import { loadStripe } from "@stripe/stripe-js"
@@ -8,7 +9,7 @@ interface StripePaymentButtonProps {
 }
 
 // Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY!)
 export const StripePaymentButton = ({
   paymentSession,
   isLoading = false,
@@ -29,7 +30,7 @@ export const StripePaymentButton = ({
     }
   }
 
-  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+  if (!STRIPE_PUBLISHABLE_KEY) {
     return (
       <Button
         disabled

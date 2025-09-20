@@ -21,6 +21,7 @@ var (
 		contracts.TripEventNoDriversFound,
 		contracts.TripEventDriverAssigned,
 		contracts.DriverCmdTripRequest,
+		contracts.PaymentEventSessionCreated,
 	}
 
 	connManager = messaging.NewConnectionManager()

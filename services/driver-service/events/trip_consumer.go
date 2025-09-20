@@ -25,7 +25,6 @@ func NewTripConsumer(kfClient *kf.KafkaClient, svc service.DriverService) *TripC
 
 // Consume starts consuming to the specified topics and processes messages.
 func (tec *TripConsumer) Consume(ctx context.Context, topics []string) error {
-	defer tec.kfClient.Consumer.Close()
 	return tec.kfClient.Consumer.SubscribeAndConsume(ctx, topics,
 		func(ctx context.Context, msg *kafka.Message) error {
 

@@ -18,7 +18,7 @@ spec:
       containers:
       - name: web-service
         image: uber-clone/web-service:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
           name: http
@@ -31,9 +31,9 @@ spec:
             memory: 256Mi
         env:
         - name: NEXT_PUBLIC_API_URL
-          value: "http://api-gateway.uber-clone.svc.cluster.local:8080"  # Internal service communication
+          value: "http://localhost:8080"  # Internal service communication
         - name: NEXT_PUBLIC_WS_URL
-          value: "ws://api-gateway.uber-clone.svc.cluster.local:8080/ws"  # Internal service communication
+          value: "ws://localhost:8080/ws"  # Internal service communication
         - name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
           valueFrom:
             secretKeyRef:
